@@ -1,0 +1,159 @@
+**FIRST DASHBOARD**
+-------------------------------------------------------------------------------------------------------------------
+SELECT
+  translations.string_field_1 AS product_category,
+  customers.customer_state,
+  orders.order_status,
+  payments.payment_type,
+  sellers.seller_city,
+  EXTRACT(YEAR FROM orders.order_purchase_timestamp) AS purchase_year,
+  SUM(order_items.price + order_items.freight_value) AS total_revenue,
+  SUM(order_items.order_item_id) AS total_items_sold,
+  COUNT(DISTINCT orders.order_id) AS total_orders,
+  COUNT(DISTINCT products.product_id) AS total_products_for_sale,
+  AVG(reviews.review_score) AS average_product_rating,
+  translations.string_field_0 AS product_category_name_translated
+FROM
+  `tc-da-1.olist_db.olist_order_items_dataset` AS order_items
+  JOIN `tc-da-1.olist_db.olist_products_dataset` AS products ON order_items.product_id = products.product_id
+  JOIN `tc-da-1.olist_db.olist_orders_dataset` AS orders ON order_items.order_id = orders.order_id
+  JOIN `tc-da-1.olist_db.olist_customesr_dataset` AS customers ON orders.customer_id = customers.customer_id
+  JOIN `tc-da-1.olist_db.olist_order_payments_dataset` AS payments ON orders.order_id = payments.order_id
+  JOIN `tc-da-1.olist_db.product_category_name_translation` AS translations ON products.product_category_name = translations.string_field_0
+  JOIN `tc-da-1.olist_db.olist_sellers_dataset` AS sellers ON order_items.seller_id = sellers.seller_id
+  JOIN `tc-da-1.olist_db.olist_order_reviews_dataset` AS reviews ON orders.order_id = reviews.order_id
+
+WHERE
+  orders.order_purchase_timestamp >= '2017-01-01'
+GROUP BY
+  translations.string_field_1,
+  customers.customer_state,
+  orders.order_status,
+  payments.payment_type,
+  sellers.seller_city,
+  translations.string_field_0,
+  purchase_year
+ORDER BY
+  translations.string_field_1,
+  customers.customer_state,
+  orders.order_status,
+  payments.payment_type
+----------------------------------------------------------------------------------------------------------
+
+**SECOND DASHBOARD**
+----------------------------------------------------------------------------------------------------------
+SELECT
+  translations.string_field_1 AS product_category,
+  translations.string_field_0 AS product_category_name_translated,
+  orders.order_status,
+  payments.payment_type,
+  customers.customer_state,
+  order_items.price,
+  order_items.order_id,
+  COUNT(DISTINCT orders.order_id) AS total_orders,
+  EXTRACT(YEAR FROM orders.order_purchase_timestamp) AS order_year,
+  DATE(DATE_TRUNC(orders.order_purchase_timestamp, WEEK)) AS order_week,
+  COUNTIF(orders.order_delivered_customer_date > orders.order_estimated_delivery_date) AS orders_delivered_late,
+  AVG(DATE_DIFF(orders.order_delivered_customer_date, orders.order_purchase_timestamp, DAY)) AS avg_days_to_deliver,
+  AVG(DATE_DIFF(orders.order_approved_at, orders.order_purchase_timestamp, HOUR)) AS avg_hours_to_approve,
+  AVG(DATE_DIFF(orders.order_estimated_delivery_date, orders.order_delivered_customer_date, DAY)) AS avg_delivery_estimate_accuracy,
+  SUM(order_items.price + order_items.freight_value) AS total_revenue
+  
+FROM
+  `tc-da-1.olist_db.olist_orders_dataset` AS orders
+  JOIN `tc-da-1.olist_db.olist_customesr_dataset` AS customers ON orders.customer_id = customers.customer_id
+  JOIN `tc-da-1.olist_db.olist_order_payments_dataset` AS payments ON orders.order_id = payments.order_id
+  JOIN `tc-da-1.olist_db.olist_order_items_dataset` AS order_items ON orders.order_id = order_items.order_id
+  JOIN `tc-da-1.olist_db.olist_products_dataset` AS products ON order_items.product_id = products.product_id
+  JOIN `tc-da-1.olist_db.product_category_name_translation` AS translations ON products.product_category_name = translations.string_field_0
+  
+WHERE
+  orders.order_purchase_timestamp >= '2017-01-01'
+  
+GROUP BY
+  order_items.order_id,
+  translations.string_field_1,
+  translations.string_field_0,
+  orders.order_status,
+  payments.payment_type,
+  customers.customer_state,
+  order_week,
+  order_year,
+  order_items.price
+  
+ORDER BY
+  translations.string_field_1,
+  customers.customer_state,
+  orders.order_status,
+  payments.payment_type
+------------------------------------------------------------------------------------------------------------
+THIRD DASHBOARD
+------------------------------------------------------------------------------------------------------------
+SELECT
+  COUNT(DISTINCT orders.customer_id) AS customers_count,
+  translations.string_field_1 AS product_category,
+  translations.string_field_0 AS product_category_name_translated,
+  orders.order_status,
+  payments.payment_type,
+  customers.customer_state,
+  SUM(payments.payment_value) AS payments_amount,
+  EXTRACT(YEAR FROM orders.order_purchase_timestamp) AS order_year,
+  DATE(DATE_TRUNC(orders.order_purchase_timestamp, WEEK)) AS order_week
+  
+FROM
+  `tc-da-1.olist_db.olist_orders_dataset` AS orders
+  JOIN `tc-da-1.olist_db.olist_customesr_dataset` AS customers ON orders.customer_id = customers.customer_id
+  JOIN `tc-da-1.olist_db.olist_order_payments_dataset` AS payments ON orders.order_id = payments.order_id
+  JOIN `tc-da-1.olist_db.olist_order_items_dataset` AS order_items ON orders.order_id = order_items.order_id
+  JOIN `tc-da-1.olist_db.olist_products_dataset` AS products ON order_items.product_id = products.product_id
+  JOIN `tc-da-1.olist_db.product_category_name_translation` AS translations ON products.product_category_name = translations.string_field_0
+  
+WHERE
+  orders.order_purchase_timestamp >= '2017-01-01'
+  
+GROUP BY
+  orders.customer_id,
+  translations.string_field_1,
+  translations.string_field_0,
+  orders.order_status,
+  payments.payment_type,
+  customers.customer_state,
+  order_week,
+  order_year
+  
+ORDER BY
+  translations.string_field_1,
+  customers.customer_state,
+  orders.order_status,
+  payments.payment_type
+--------------------------------------------------------------------------------------------------------------
+MAPS DASHBOARD
+--------------------------------------------------------------------------------------------------------------
+SELECT
+ seller_state,
+ customer_state,
+ freight_value,
+ customers.customer_id,
+ payment_value,
+ EXTRACT(YEAR FROM orders.order_purchase_timestamp) AS order_year
+FROM
+ `tc-da-1.olist_db.olist_order_items_dataset` items
+INNER JOIN
+ `tc-da-1.olist_db.olist_sellers_dataset` sellers
+ON
+ items.seller_id = sellers.seller_id
+INNER JOIN
+ `tc-da-1.olist_db.olist_orders_dataset` orders
+ON
+ items.order_id = orders.order_id
+INNER JOIN
+ `tc-da-1.olist_db.olist_customesr_dataset` customers
+ON
+ orders.customer_id = customers.customer_id
+INNER JOIN
+ `tc-da-1.olist_db.olist_order_payments_dataset` payments 
+ON
+orders.order_id=payments.order_id
+WHERE
+ orders.order_purchase_timestamp >= '2017-01-01'
+GROUP BY 1,2,3,4,5,6;
